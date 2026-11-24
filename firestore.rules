@@ -1,0 +1,285 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Shared Primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 2 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'msaadvirk7@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Helpers
+    function isValidCollege(data) {
+      return data.keys().hasAll([
+          'id', 'name', 'shortName', 'city', 'openMeritSeats', 'totalSeats',
+          'firstListClosing', 'latestClosing', 'priorYearFinalClosing',
+          'currentRound', 'status', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'name', 'shortName', 'city', 'openMeritSeats', 'totalSeats',
+          'firstListClosing', 'latestClosing', 'priorYearFinalClosing',
+          'currentRound', 'status', 'quotaHighlights', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.name is string && data.name.size() >= 3 && data.name.size() <= 140 &&
+        data.shortName is string && data.shortName.size() >= 2 && data.shortName.size() <= 24 &&
+        data.city is string && data.city.size() >= 2 && data.city.size() <= 48 &&
+        data.openMeritSeats is int && data.openMeritSeats > 0 && data.openMeritSeats <= 1000 &&
+        data.totalSeats is int && data.totalSeats > 0 && data.totalSeats <= 1000 &&
+        data.firstListClosing is number && data.firstListClosing >= 50 && data.firstListClosing <= 100 &&
+        data.latestClosing is number && data.latestClosing >= 50 && data.latestClosing <= 100 &&
+        data.priorYearFinalClosing is number && data.priorYearFinalClosing >= 50 && data.priorYearFinalClosing <= 100 &&
+        data.currentRound is int && data.currentRound >= 1 && data.currentRound <= 8 &&
+        data.status in ['open_upgradation', 'filling_fast', 'finalized'] &&
+        (!('quotaHighlights' in data) || (data.quotaHighlights is string && data.quotaHighlights.size() <= 180)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCollegeVote(data) {
+      return data.keys().hasAll([
+          'collegeId', 'userId', 'sentiment', 'predictedClosing', 'aggregateSnapshot', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'collegeId', 'userId', 'sentiment', 'predictedClosing', 'aggregateSnapshot', 'updatedAt'
+        ]) &&
+        isValidId(data.collegeId) &&
+        isValidId(data.userId) &&
+        data.userId == request.auth.uid &&
+        data.sentiment in ['drop_likely', 'steady', 'tight'] &&
+        data.predictedClosing is number && data.predictedClosing >= 50 && data.predictedClosing <= 100 &&
+        data.aggregateSnapshot is number && data.aggregateSnapshot >= 50 && data.aggregateSnapshot <= 100 &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdmissionUpdate(data) {
+      return data.keys().hasAll([
+          'title', 'body', 'category', 'collegeId', 'roundNumber',
+          'authorId', 'authorName', 'verifiedSource', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'title', 'body', 'category', 'collegeId', 'roundNumber',
+          'authorId', 'authorName', 'verifiedSource', 'createdAt'
+        ]) &&
+        data.title is string && data.title.size() >= 4 && data.title.size() <= 120 &&
+        data.body is string && data.body.size() >= 10 && data.body.size() <= 600 &&
+        data.category in ['official_list', 'fee_deadline', 'seat_movement', 'upgradation_alert'] &&
+        isValidId(data.collegeId) &&
+        data.roundNumber is int && data.roundNumber >= 1 && data.roundNumber <= 8 &&
+        isValidId(data.authorId) &&
+        data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 60 &&
+        data.verifiedSource is bool &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidMeritProfile(data) {
+      return data.keys().hasAll([
+          'userId', 'matricMarks', 'matricTotal', 'fscMarks', 'fscTotal',
+          'mdcatMarks', 'mdcatTotal', 'calculatedAggregate', 'currentCollegeId',
+          'quotaCategory', 'preferredCollegeIds', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'matricMarks', 'matricTotal', 'fscMarks', 'fscTotal',
+          'mdcatMarks', 'mdcatTotal', 'calculatedAggregate', 'currentCollegeId',
+          'quotaCategory', 'preferredCollegeIds', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.userId == request.auth.uid &&
+        data.matricMarks is number && data.matricMarks >= 0 && data.matricMarks <= 1200 &&
+        data.matricTotal is number && data.matricTotal >= 100 && data.matricTotal <= 1200 &&
+        data.fscMarks is number && data.fscMarks >= 0 && data.fscMarks <= 1200 &&
+        data.fscTotal is number && data.fscTotal >= 100 && data.fscTotal <= 1200 &&
+        data.mdcatMarks is number && data.mdcatMarks >= 0 && data.mdcatMarks <= 250 &&
+        data.mdcatTotal is number && data.mdcatTotal >= 100 && data.mdcatTotal <= 250 &&
+        data.calculatedAggregate is number && data.calculatedAggregate >= 0 && data.calculatedAggregate <= 100 &&
+        isValidId(data.currentCollegeId) &&
+        data.quotaCategory in ['open_merit', 'udd', 'overseas', 'reciprocal', 'disability'] &&
+        data.preferredCollegeIds is list && data.preferredCollegeIds.size() <= 17 &&
+        (data.preferredCollegeIds.size() == 0 || data.preferredCollegeIds[0] is string) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSeatIntention(data) {
+      return data.keys().hasAll([
+          'userId', 'currentCollegeId', 'willLeaveCollege', 'optForUpgradation',
+          'intentionStatus', 'targetCollegeId', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'currentCollegeId', 'willLeaveCollege', 'optForUpgradation',
+          'intentionStatus', 'targetCollegeId', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.userId == request.auth.uid &&
+        isValidId(data.currentCollegeId) &&
+        data.willLeaveCollege is bool &&
+        data.optForUpgradation is bool &&
+        data.intentionStatus in ['leaving', 'upgrading', 'staying'] &&
+        isValidId(data.targetCollegeId) &&
+        data.updatedAt is timestamp;
+    }
+
+    // Startup connection check document
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // Admin lookup collection (read own doc only)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && request.auth.uid == adminId;
+    }
+
+    // UHS Punjab Public Sector MBBS Colleges Catalog
+    match /colleges/{collegeId} {
+      allow get: if isValidId(collegeId);
+      allow list: if resource.data.openMeritSeats > 0;
+      allow create: if isAdmin() &&
+        isValidId(collegeId) &&
+        isValidCollege(incoming()) &&
+        incoming().id == collegeId &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() &&
+        isValidId(collegeId) &&
+        isValidCollege(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'latestClosing', 'currentRound', 'status', 'quotaHighlights', 'updatedAt'
+        ]) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(collegeId);
+    }
+
+    // Community College Chances Votes (deterministic ID: {collegeId}_{userId})
+    match /collegeVotes/{voteId} {
+      allow get: if isValidId(voteId);
+      allow list: if resource.data.sentiment in ['drop_likely', 'steady', 'tight'];
+      allow create: if isVerifiedUser() &&
+        isValidId(voteId) &&
+        isValidCollegeVote(incoming()) &&
+        voteId == incoming().collegeId + '_' + request.auth.uid &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(voteId) &&
+        isValidCollegeVote(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().collegeId == existing().collegeId &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'sentiment', 'predictedClosing', 'aggregateSnapshot', 'updatedAt'
+        ]) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isVerifiedUser() &&
+        isValidId(voteId) &&
+        existing().userId == request.auth.uid;
+    }
+
+    // Real-Time UHS Admission Updates Stream
+    match /admissionUpdates/{updateId} {
+      allow get: if isValidId(updateId);
+      allow list: if resource.data.category in [
+        'official_list', 'fee_deadline', 'seat_movement', 'upgradation_alert'
+      ];
+      allow create: if isVerifiedUser() &&
+        isValidId(updateId) &&
+        isValidAdmissionUpdate(incoming()) &&
+        incoming().authorId == request.auth.uid &&
+        (incoming().verifiedSource == false || isAdmin()) &&
+        incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(updateId) &&
+        isValidAdmissionUpdate(incoming()) &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'body', 'category', 'collegeId', 'roundNumber', 'verifiedSource'
+          ])) ||
+          (existing().authorId == request.auth.uid &&
+           incoming().verifiedSource == existing().verifiedSource &&
+           incoming().diff(existing()).affectedKeys().hasOnly([
+             'title', 'body', 'category', 'collegeId', 'roundNumber'
+           ]))
+        );
+      allow delete: if isVerifiedUser() &&
+        isValidId(updateId) &&
+        (existing().authorId == request.auth.uid || isAdmin());
+    }
+
+    // Private Student Merit Profile (PII / personal academic scores isolated per user)
+    match /users/{userId}/private/merit {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() &&
+        isOwner(userId) &&
+        isValidId(userId) &&
+        isValidMeritProfile(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isOwner(userId) &&
+        isValidId(userId) &&
+        isValidMeritProfile(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'matricMarks', 'matricTotal', 'fscMarks', 'fscTotal',
+          'mdcatMarks', 'mdcatTotal', 'calculatedAggregate',
+          'currentCollegeId', 'quotaCategory', 'preferredCollegeIds', 'updatedAt'
+        ]) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isVerifiedUser() && isOwner(userId) && isValidId(userId);
+    }
+
+    // Public anonymized student seat retention & upgradation declarations
+    match /seatIntentions/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if resource.data.intentionStatus in ['leaving', 'upgrading', 'staying'];
+      allow create: if isVerifiedUser() &&
+        isOwner(userId) &&
+        isValidId(userId) &&
+        isValidSeatIntention(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isOwner(userId) &&
+        isValidId(userId) &&
+        isValidSeatIntention(incoming()) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'currentCollegeId', 'willLeaveCollege', 'optForUpgradation',
+          'intentionStatus', 'targetCollegeId', 'updatedAt'
+        ]) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isVerifiedUser() && isOwner(userId) && isValidId(userId);
+    }
+  }
+}

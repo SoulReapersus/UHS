@@ -1,0 +1,6 @@
+{
+  "name": "UHS MeritPulse",
+  "description": "Real-time UHS Punjab Public Sector MBBS admission updates, upgradation probability tracker, community college voting, AI admissions advisor, and high-resolution milestone visualizer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

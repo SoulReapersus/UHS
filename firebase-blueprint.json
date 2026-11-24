@@ -1,0 +1,311 @@
+{
+  "entities": {
+    "College": {
+      "title": "College",
+      "description": "UHS Punjab Public Sector MBBS medical college entry with merit benchmarks and seat counts.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 140
+        },
+        "shortName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 48
+        },
+        "openMeritSeats": {
+          "type": "integer"
+        },
+        "totalSeats": {
+          "type": "integer"
+        },
+        "firstListClosing": {
+          "type": "number"
+        },
+        "latestClosing": {
+          "type": "number"
+        },
+        "priorYearFinalClosing": {
+          "type": "number"
+        },
+        "currentRound": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open_upgradation", "filling_fast", "finalized"]
+        },
+        "quotaHighlights": {
+          "type": "string",
+          "maxLength": 180
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "shortName",
+        "city",
+        "openMeritSeats",
+        "totalSeats",
+        "firstListClosing",
+        "latestClosing",
+        "priorYearFinalClosing",
+        "currentRound",
+        "status",
+        "updatedAt"
+      ]
+    },
+    "CollegeVote": {
+      "title": "CollegeVote",
+      "description": "Authenticated student vote on a specific UHS medical college upgradation and cutoff outlook.",
+      "type": "object",
+      "properties": {
+        "collegeId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sentiment": {
+          "type": "string",
+          "enum": ["drop_likely", "steady", "tight"]
+        },
+        "predictedClosing": {
+          "type": "number"
+        },
+        "aggregateSnapshot": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "collegeId",
+        "userId",
+        "sentiment",
+        "predictedClosing",
+        "aggregateSnapshot",
+        "updatedAt"
+      ]
+    },
+    "AdmissionUpdate": {
+      "title": "AdmissionUpdate",
+      "description": "Real-time UHS selection list announcement, fee deadline, or student-verified seat movement update.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 120
+        },
+        "body": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 600
+        },
+        "category": {
+          "type": "string",
+          "enum": ["official_list", "fee_deadline", "seat_movement", "upgradation_alert"]
+        },
+        "collegeId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "roundNumber": {
+          "type": "integer"
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "verifiedSource": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "title",
+        "body",
+        "category",
+        "collegeId",
+        "roundNumber",
+        "authorId",
+        "authorName",
+        "verifiedSource",
+        "createdAt"
+      ]
+    },
+    "MeritProfile": {
+      "title": "MeritProfile",
+      "description": "Private student academic marks, calculated UHS aggregate, allotted college, and preference order.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "matricMarks": {
+          "type": "number"
+        },
+        "matricTotal": {
+          "type": "number"
+        },
+        "fscMarks": {
+          "type": "number"
+        },
+        "fscTotal": {
+          "type": "number"
+        },
+        "mdcatMarks": {
+          "type": "number"
+        },
+        "mdcatTotal": {
+          "type": "number"
+        },
+        "calculatedAggregate": {
+          "type": "number"
+        },
+        "currentCollegeId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "quotaCategory": {
+          "type": "string",
+          "enum": ["open_merit", "udd", "overseas", "reciprocal", "disability"]
+        },
+        "preferredCollegeIds": {
+          "type": "array"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "matricMarks",
+        "matricTotal",
+        "fscMarks",
+        "fscTotal",
+        "mdcatMarks",
+        "mdcatTotal",
+        "calculatedAggregate",
+        "currentCollegeId",
+        "quotaCategory",
+        "preferredCollegeIds",
+        "updatedAt"
+      ]
+    },
+    "SeatIntention": {
+      "title": "SeatIntention",
+      "description": "Student declaration of whether they will leave their current college and whether they are opting for upgradation.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "currentCollegeId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "willLeaveCollege": {
+          "type": "boolean"
+        },
+        "optForUpgradation": {
+          "type": "boolean"
+        },
+        "intentionStatus": {
+          "type": "string",
+          "enum": ["leaving", "upgrading", "staying"]
+        },
+        "targetCollegeId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "currentCollegeId",
+        "willLeaveCollege",
+        "optForUpgradation",
+        "intentionStatus",
+        "targetCollegeId",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/colleges/{collegeId}": {
+      "schema": { "$ref": "#/entities/College" },
+      "description": "Public UHS Punjab Public Sector MBBS medical colleges catalog."
+    },
+    "/collegeVotes/{voteId}": {
+      "schema": { "$ref": "#/entities/CollegeVote" },
+      "description": "One-vote-per-student-per-college polls keyed by {collegeId}_{userId}."
+    },
+    "/admissionUpdates/{updateId}": {
+      "schema": { "$ref": "#/entities/AdmissionUpdate" },
+      "description": "Real-time stream of UHS admission announcements and verified movement reports."
+    },
+    "/users/{userId}/private/merit": {
+      "schema": { "$ref": "#/entities/MeritProfile" },
+      "description": "Private student aggregate calculation, current allotment, and preference list."
+    },
+    "/seatIntentions/{userId}": {
+      "schema": { "$ref": "#/entities/SeatIntention" },
+      "description": "Public anonymized student declarations on leaving current college and opting for upgradation."
+    }
+  }
+}
